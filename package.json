@@ -1,6 +1,6 @@
 {
-  "name": "moemail-temporary-inbox-fixed",
-  "version": "1.2.2",
+  "name": "moemail-admin-accounts-mailbox-15day-renewal",
+  "version": "1.6.0",
   "private": true,
   "type": "module",
   "scripts": {

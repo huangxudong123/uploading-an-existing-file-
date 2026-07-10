@@ -2,5 +2,15 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "agentmail-random-inbox",
   "main": "worker.js",
-  "compatibility_date": "2026-07-01"
+  "compatibility_date": "2026-07-01",
+  "kv_namespaces": [
+    {
+      "binding": "ADMIN_USERS"
+    }
+  ],
+  "triggers": {
+    "crons": [
+      "0 * * * *"
+    ]
+  }
 }
