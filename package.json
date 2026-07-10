@@ -1,6 +1,6 @@
 {
-  "name": "moemail-card-inbox-list",
-  "version": "1.2.1",
+  "name": "moemail-temporary-inbox-fixed",
+  "version": "1.2.2",
   "private": true,
   "type": "module",
   "scripts": {
