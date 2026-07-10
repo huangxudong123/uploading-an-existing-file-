@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="独立邮箱收件页面">
+  <title>查看邮箱邮件</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="public-page">
+  <div class="public-shell">
+    <header class="public-header panel">
+      <div class="public-title">
+        <p class="eyebrow">独立邮件页面</p>
+        <h1 id="publicEmailAddress">正在加载邮箱…</h1>
+        <p class="public-note">此页面只用于查看这个邮箱的邮件，不提供创建或删除邮箱功能。</p>
+      </div>
+      <div class="topbar-actions">
+        <span id="publicStatus" class="status-pill">正在连接…</span>
+        <button id="copyPublicAddressButton" class="button ghost" type="button">复制邮箱</button>
+        <button id="refreshPublicButton" class="button primary" type="button">刷新邮件</button>
+      </div>
+    </header>
+
+    <main class="public-layout">
+      <section class="panel messages-panel">
+        <div class="panel-header">
+          <div>
+            <p class="label">收到的邮件</p>
+            <h2>收件箱</h2>
+          </div>
+          <span id="messageCount" class="count-badge">0 封</span>
+        </div>
+        <div class="toolbar">
+          <input id="publicSearchInput" type="search" placeholder="搜索发件人或主题" aria-label="搜索邮件">
+        </div>
+        <div id="publicMessageList" class="message-list empty-state">
+          <div><div class="empty-icon">✉</div><p>正在加载邮件…</p></div>
+        </div>
+      </section>
+
+      <section class="panel viewer-panel">
+        <div id="publicMessageViewer" class="viewer-empty">
+          <div><div class="empty-icon">⌁</div><p>点击一封邮件查看正文</p></div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="/viewer.js"></script>
+</body>
+</html>
