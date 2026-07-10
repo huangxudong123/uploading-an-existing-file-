@@ -1,22 +1,17 @@
-const INDEX_HTML = "<!doctype html>\n<html lang=\"zh-CN\">\n<head>\n  <meta charset=\"utf-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n  <meta name=\"color-scheme\" content=\"light dark\" />\n  <meta name=\"description\" content=\"一键创建随机 MoeMail 邮箱并通过专属链接查看邮件。\" />\n  <title>随机邮箱控制台</title>\n  <link rel=\"stylesheet\" href=\"/style.css\" />\n</head>\n<body>\n  <div class=\"app-shell\">\n    <header class=\"topbar\">\n      <div>\n        <p class=\"eyebrow\">MOEMAIL 邮箱控制台</p>\n        <h1>随机邮箱控制台</h1>\n      </div>\n      <div class=\"topbar-actions\">\n        <span id=\"connectionStatus\" class=\"status-pill\">正在检查连接…</span>\n        <button id=\"refreshAllButton\" class=\"button ghost\" type=\"button\">刷新</button>\n      </div>\n    </header>\n\n    <main class=\"layout\">\n      <aside class=\"sidebar panel\">\n        <div class=\"panel-header create-header\">\n          <div>\n            <p class=\"label\">邮箱列表</p>\n            <h2>我的邮箱</h2>\n          </div>\n          <button id=\"createInboxButton\" class=\"button primary create-random-button\" type=\"button\">\n            ＋ 创建随机邮箱\n          </button>\n        </div>\n\n        <section id=\"createResult\" class=\"create-result hidden\" aria-live=\"polite\">\n          <div class=\"result-heading\">\n            <div>\n              <p class=\"label success-label\">创建成功</p>\n              <h3>随机邮箱已生成</h3>\n            </div>\n            <button id=\"closeCreateResultButton\" class=\"result-close\" type=\"button\" aria-label=\"关闭创建结果\">×</button>\n          </div>\n\n          <div class=\"result-field\">\n            <span>邮箱名称</span>\n            <div class=\"result-value-row\">\n              <code id=\"createdEmailName\"></code>\n              <button id=\"copyCreatedEmailButton\" class=\"button ghost compact\" type=\"button\">复制</button>\n            </div>\n          </div>\n\n          <div class=\"result-field\">\n            <span>查看邮件链接</span>\n            <div class=\"result-url-box\">\n              <input id=\"createdInboxUrl\" type=\"text\" readonly aria-label=\"查看邮件链接\" />\n              <div class=\"result-actions\">\n                <button id=\"copyCreatedUrlButton\" class=\"button ghost\" type=\"button\">复制链接</button>\n                <a id=\"openCreatedUrlButton\" class=\"button primary link-button\" href=\"#\" target=\"_blank\" rel=\"noopener noreferrer\">打开查看</a>\n              </div>\n            </div>\n          </div>\n        </section>\n\n        <div id=\"inboxList\" class=\"inbox-list\" aria-live=\"polite\"></div>\n      </aside>\n\n      <section class=\"messages panel\">\n        <div class=\"panel-header messages-header\">\n          <div class=\"truncate\">\n            <p class=\"label\">当前邮箱</p>\n            <h2 id=\"selectedInboxTitle\">请选择一个邮箱</h2>\n          </div>\n          <button id=\"copyAddressButton\" class=\"button ghost hidden\" type=\"button\">复制地址</button>\n        </div>\n\n        <div class=\"toolbar\">\n          <input id=\"messageSearchInput\" type=\"search\" placeholder=\"搜索发件人或主题\" aria-label=\"搜索邮件\" />\n          <button id=\"refreshMessagesButton\" class=\"button ghost\" type=\"button\">刷新邮件</button>\n        </div>\n\n        <div id=\"messageList\" class=\"message-list empty-state\">\n          <div>\n            <div class=\"empty-icon\">✉</div>\n            <p>选择左侧邮箱后查看邮件</p>\n          </div>\n        </div>\n      </section>\n\n      <section class=\"viewer panel\">\n        <div id=\"messageViewer\" class=\"viewer-empty\">\n          <div>\n            <div class=\"empty-icon\">⌁</div>\n            <p>点击一封邮件查看正文</p>\n          </div>\n        </div>\n      </section>\n    </main>\n  </div>\n\n  <div id=\"toast\" class=\"toast\" role=\"status\" aria-live=\"polite\"></div>\n  <script type=\"module\" src=\"/app.js\"></script>\n</body>\n</html>\n";
-const STYLE_CSS = ":root {\n  --bg: #f5f7fb;\n  --panel: rgba(255, 255, 255, 0.94);\n  --panel-strong: #ffffff;\n  --text: #172033;\n  --muted: #6c768a;\n  --border: #e3e8f1;\n  --primary: #635bff;\n  --primary-strong: #5147f2;\n  --primary-soft: #efefff;\n  --success: #0f9f68;\n  --danger: #d9485f;\n  --shadow: 0 16px 45px rgba(31, 45, 73, 0.08);\n}\n\n* { box-sizing: border-box; }\nhtml, body { min-height: 100%; }\nbody {\n  margin: 0;\n  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;\n  color: var(--text);\n  background:\n    radial-gradient(circle at 10% 0%, rgba(99, 91, 255, 0.12), transparent 28rem),\n    var(--bg);\n}\nbutton, input { font: inherit; }\nbutton { cursor: pointer; }\n\n.app-shell { max-width: 1600px; margin: 0 auto; padding: 24px; }\n.topbar {\n  display: flex;\n  justify-content: space-between;\n  align-items: center;\n  gap: 20px;\n  margin-bottom: 18px;\n}\n.topbar h1 { margin: 2px 0 0; font-size: clamp(24px, 3vw, 34px); letter-spacing: -0.04em; }\n.eyebrow, .label {\n  margin: 0;\n  color: var(--muted);\n  font-size: 11px;\n  font-weight: 800;\n  letter-spacing: 0.12em;\n  text-transform: uppercase;\n}\n.topbar-actions { display: flex; align-items: center; gap: 10px; }\n\n.layout {\n  display: grid;\n  grid-template-columns: minmax(260px, 0.8fr) minmax(320px, 1fr) minmax(420px, 1.55fr);\n  gap: 14px;\n  min-height: calc(100vh - 120px);\n}\n.panel {\n  min-width: 0;\n  overflow: hidden;\n  border: 1px solid rgba(227, 232, 241, 0.9);\n  border-radius: 20px;\n  background: var(--panel);\n  box-shadow: var(--shadow);\n  backdrop-filter: blur(18px);\n}\n.panel-header {\n  min-height: 82px;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 12px;\n  padding: 18px;\n  border-bottom: 1px solid var(--border);\n}\n.panel-header h2 { margin: 4px 0 0; font-size: 18px; }\n\n.button, .icon-button {\n  border: 0;\n  border-radius: 12px;\n  font-weight: 700;\n  transition: 160ms ease;\n}\n.button { padding: 10px 14px; }\n.button:disabled, .icon-button:disabled { opacity: 0.5; cursor: not-allowed; }\n.button.primary { background: var(--primary); color: #fff; }\n.button.primary:hover:not(:disabled) { background: var(--primary-strong); transform: translateY(-1px); }\n.button.ghost { background: #f1f3f8; color: var(--text); }\n.button.ghost:hover:not(:disabled) { background: #e8ebf2; }\n.icon-button {\n  width: 38px;\n  height: 38px;\n  display: grid;\n  place-items: center;\n  background: var(--primary);\n  color: #fff;\n  font-size: 24px;\n  line-height: 1;\n}\n\n.status-pill {\n  display: inline-flex;\n  align-items: center;\n  gap: 7px;\n  border-radius: 999px;\n  padding: 8px 11px;\n  background: #eef1f6;\n  color: var(--muted);\n  font-size: 12px;\n  font-weight: 800;\n}\n.status-pill::before { content: \"\"; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }\n.status-pill.online { color: var(--success); background: #e9f8f2; }\n.status-pill.offline { color: var(--danger); background: #fff0f2; }\n\n.create-form {\n  display: grid;\n  gap: 12px;\n  padding: 16px 18px;\n  background: #fafbfe;\n  border-bottom: 1px solid var(--border);\n}\n.create-form label { display: grid; gap: 6px; }\n.create-form label span { font-size: 12px; color: var(--muted); font-weight: 700; }\ninput {\n  width: 100%;\n  border: 1px solid var(--border);\n  border-radius: 12px;\n  padding: 11px 12px;\n  color: var(--text);\n  background: var(--panel-strong);\n  outline: none;\n}\ninput:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.12); }\n.form-actions { display: flex; justify-content: flex-end; gap: 8px; }\n.hidden { display: none !important; }\n\n.inbox-list, .message-list { overflow-y: auto; }\n.inbox-list { max-height: calc(100vh - 205px); padding: 8px; }\n.inbox-item, .message-item {\n  width: 100%;\n  text-align: left;\n  border: 0;\n  background: transparent;\n  color: inherit;\n}\n.inbox-item {\n  display: grid;\n  gap: 4px;\n  padding: 13px 12px;\n  border-radius: 14px;\n}\n.inbox-item:hover { background: #f3f5fa; }\n.inbox-item.active { background: var(--primary-soft); }\n.inbox-item .address { font-weight: 800; overflow-wrap: anywhere; }\n.inbox-item .meta { color: var(--muted); font-size: 12px; }\n\n.messages { display: grid; grid-template-rows: auto auto 1fr; }\n.messages-header { min-width: 0; }\n.truncate { min-width: 0; }\n.truncate h2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n.toolbar { display: flex; gap: 8px; padding: 12px; border-bottom: 1px solid var(--border); }\n.toolbar input { min-width: 0; }\n.message-list { min-height: 0; }\n.message-item {\n  display: grid;\n  gap: 7px;\n  padding: 15px 16px;\n  border-bottom: 1px solid var(--border);\n}\n.message-item:hover { background: #f8f9fc; }\n.message-item.active { background: var(--primary-soft); }\n.message-row { display: flex; justify-content: space-between; gap: 12px; }\n.message-from, .message-subject { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n.message-from { font-weight: 800; }\n.message-time { flex: 0 0 auto; font-size: 12px; color: var(--muted); }\n.message-subject { font-weight: 700; }\n.message-preview { color: var(--muted); font-size: 13px; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }\n\n.viewer { overflow-y: auto; }\n.viewer-empty, .empty-state {\n  min-height: 100%;\n  display: grid;\n  place-items: center;\n  color: var(--muted);\n  text-align: center;\n}\n.empty-icon { font-size: 42px; opacity: 0.5; margin-bottom: 8px; }\n.message-detail { min-height: 100%; }\n.message-detail-header { padding: 24px; border-bottom: 1px solid var(--border); }\n.message-detail-header h2 { margin: 0 0 16px; font-size: 24px; line-height: 1.25; }\n.message-meta { display: grid; gap: 7px; color: var(--muted); font-size: 13px; }\n.message-meta strong { color: var(--text); }\n.message-body { padding: 24px; line-height: 1.7; overflow-wrap: anywhere; }\n.message-body pre { white-space: pre-wrap; font: inherit; margin: 0; }\n.message-body a { color: var(--primary); }\n.message-body table { max-width: 100%; border-collapse: collapse; }\n.message-body td, .message-body th { border: 1px solid var(--border); padding: 6px; }\n.attachments { margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--border); }\n.attachment-chip { display: inline-flex; margin: 5px 5px 0 0; padding: 7px 9px; border-radius: 999px; background: #f1f3f8; font-size: 12px; }\n\n.loading-row, .error-box { margin: 14px; padding: 14px; border-radius: 12px; color: var(--muted); text-align: center; }\n.error-box { background: #fff0f2; color: var(--danger); }\n.toast {\n  position: fixed;\n  left: 50%;\n  bottom: 24px;\n  transform: translate(-50%, 18px);\n  opacity: 0;\n  pointer-events: none;\n  z-index: 10;\n  max-width: min(520px, calc(100vw - 32px));\n  padding: 12px 16px;\n  border-radius: 12px;\n  background: #172033;\n  color: #fff;\n  box-shadow: var(--shadow);\n  transition: 180ms ease;\n}\n.toast.show { opacity: 1; transform: translate(-50%, 0); }\n\n@media (max-width: 1050px) {\n  .layout { grid-template-columns: 300px 1fr; }\n  .viewer { grid-column: 1 / -1; min-height: 520px; }\n}\n@media (max-width: 720px) {\n  .app-shell { padding: 12px; }\n  .topbar { align-items: flex-start; }\n  .topbar-actions { flex-direction: column; align-items: flex-end; }\n  .layout { display: block; }\n  .panel { margin-bottom: 12px; min-height: 420px; }\n  .sidebar { min-height: auto; }\n  .inbox-list { max-height: 340px; }\n  .viewer { min-height: 520px; }\n}\n\n@media (prefers-color-scheme: dark) {\n  :root {\n    --bg: #0f1320;\n    --panel: rgba(21, 27, 43, 0.94);\n    --panel-strong: #171d2c;\n    --text: #eef1f7;\n    --muted: #99a3b7;\n    --border: #2a3348;\n    --primary-soft: rgba(99, 91, 255, 0.18);\n    --shadow: 0 16px 45px rgba(0, 0, 0, 0.22);\n  }\n  body { background: radial-gradient(circle at 10% 0%, rgba(99, 91, 255, 0.2), transparent 28rem), var(--bg); }\n  .button.ghost, .attachment-chip, .status-pill { background: #242c3f; }\n  .button.ghost:hover:not(:disabled) { background: #2d374d; }\n  .create-form { background: #131928; }\n  .inbox-item:hover, .message-item:hover { background: #1d2435; }\n}\n\n/* 一键随机创建与创建结果 */\n.create-header {\n  align-items: center;\n}\n.create-random-button {\n  white-space: nowrap;\n}\n.create-result {\n  margin: 12px;\n  padding: 16px;\n  border: 1px solid rgba(15, 159, 104, 0.28);\n  border-radius: 16px;\n  background: rgba(15, 159, 104, 0.08);\n}\n.result-heading {\n  display: flex;\n  align-items: flex-start;\n  justify-content: space-between;\n  gap: 12px;\n  margin-bottom: 14px;\n}\n.result-heading h3 {\n  margin: 4px 0 0;\n  font-size: 16px;\n}\n.success-label { color: var(--success); }\n.result-close {\n  width: 30px;\n  height: 30px;\n  display: grid;\n  place-items: center;\n  border: 0;\n  border-radius: 9px;\n  background: transparent;\n  color: var(--muted);\n  font-size: 22px;\n  line-height: 1;\n}\n.result-close:hover { background: rgba(15, 159, 104, 0.12); }\n.result-field {\n  display: grid;\n  gap: 7px;\n  margin-top: 12px;\n}\n.result-field > span {\n  color: var(--muted);\n  font-size: 12px;\n  font-weight: 800;\n}\n.result-value-row {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n}\n.result-value-row code {\n  min-width: 0;\n  flex: 1;\n  overflow-wrap: anywhere;\n  padding: 10px 11px;\n  border-radius: 11px;\n  background: var(--panel-strong);\n  color: var(--text);\n  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;\n  font-size: 13px;\n}\n.result-url-box {\n  display: grid;\n  gap: 8px;\n}\n.result-url-box input {\n  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;\n  font-size: 12px;\n}\n.result-actions {\n  display: flex;\n  gap: 8px;\n}\n.result-actions > * { flex: 1; }\n.button.compact { padding: 8px 10px; }\n.link-button {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  text-decoration: none;\n}\n\n@media (max-width: 1250px) {\n  .create-header {\n    align-items: flex-start;\n    flex-direction: column;\n  }\n  .create-random-button { width: 100%; }\n}\n\n@media (max-width: 720px) {\n  .create-header {\n    flex-direction: row;\n    align-items: center;\n  }\n  .create-random-button {\n    width: auto;\n    padding: 9px 11px;\n    font-size: 13px;\n  }\n}\n";
-const APP_JS = "const state = {\n  inboxes: [],\n  selectedInbox: null,\n  messages: [],\n  selectedMessageId: null,\n  searchTimer: null,\n  requestedInboxId: new URLSearchParams(window.location.search).get('inbox')\n};\n\nconst elements = {\n  connectionStatus: document.querySelector('#connectionStatus'),\n  refreshAllButton: document.querySelector('#refreshAllButton'),\n  createInboxButton: document.querySelector('#createInboxButton'),\n  createResult: document.querySelector('#createResult'),\n  closeCreateResultButton: document.querySelector('#closeCreateResultButton'),\n  createdEmailName: document.querySelector('#createdEmailName'),\n  createdInboxUrl: document.querySelector('#createdInboxUrl'),\n  copyCreatedEmailButton: document.querySelector('#copyCreatedEmailButton'),\n  copyCreatedUrlButton: document.querySelector('#copyCreatedUrlButton'),\n  openCreatedUrlButton: document.querySelector('#openCreatedUrlButton'),\n  inboxList: document.querySelector('#inboxList'),\n  selectedInboxTitle: document.querySelector('#selectedInboxTitle'),\n  copyAddressButton: document.querySelector('#copyAddressButton'),\n  messageSearchInput: document.querySelector('#messageSearchInput'),\n  refreshMessagesButton: document.querySelector('#refreshMessagesButton'),\n  messageList: document.querySelector('#messageList'),\n  messageViewer: document.querySelector('#messageViewer'),\n  toast: document.querySelector('#toast')\n};\n\nasync function api(path, options = {}) {\n  const response = await fetch(path, {\n    ...options,\n    headers: {\n      Accept: 'application/json',\n      ...(options.body ? { 'Content-Type': 'application/json' } : {}),\n      ...options.headers\n    }\n  });\n\n  let payload;\n  try {\n    payload = await response.json();\n  } catch {\n    payload = { error: '服务器返回了无法解析的内容。' };\n  }\n\n  if (!response.ok) {\n    throw new Error(payload.error || `请求失败（${response.status}）`);\n  }\n  return payload;\n}\n\nfunction escapeHtml(value = '') {\n  return String(value)\n    .replaceAll('&', '&amp;')\n    .replaceAll('<', '&lt;')\n    .replaceAll('>', '&gt;')\n    .replaceAll('\"', '&quot;')\n    .replaceAll(\"'\", '&#039;');\n}\n\nfunction formatDate(value, includeTime = true) {\n  if (!value) return '未知时间';\n  const date = new Date(value);\n  if (Number.isNaN(date.getTime())) return String(value);\n  return new Intl.DateTimeFormat('zh-CN', {\n    month: 'short',\n    day: 'numeric',\n    ...(includeTime ? { hour: '2-digit', minute: '2-digit' } : {}),\n    hour12: false\n  }).format(date);\n}\n\nfunction showToast(message) {\n  elements.toast.textContent = message;\n  elements.toast.classList.add('show');\n  window.clearTimeout(showToast.timer);\n  showToast.timer = window.setTimeout(() => elements.toast.classList.remove('show'), 2400);\n}\n\nfunction setBusy(button, busy, label) {\n  button.disabled = busy;\n  if (!button.dataset.originalText) button.dataset.originalText = button.textContent.trim();\n  button.textContent = busy ? label : button.dataset.originalText;\n}\n\nfunction buildInboxUrl(inboxId) {\n  const url = new URL(window.location.href);\n  url.search = '';\n  url.hash = '';\n  url.searchParams.set('inbox', inboxId);\n  return url.toString();\n}\n\nfunction updateBrowserInboxUrl(inboxId) {\n  const url = new URL(window.location.href);\n  url.searchParams.set('inbox', inboxId);\n  window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);\n}\n\nasync function copyText(value, successMessage) {\n  try {\n    await navigator.clipboard.writeText(value);\n    showToast(successMessage);\n  } catch {\n    showToast('复制失败，请手动复制');\n  }\n}\n\nfunction showCreateResult(inbox) {\n  const email = inbox.email || inbox.inbox_id;\n  const viewerUrl = buildInboxUrl(inbox.inbox_id);\n  elements.createdEmailName.textContent = email;\n  elements.createdInboxUrl.value = viewerUrl;\n  elements.openCreatedUrlButton.href = viewerUrl;\n  elements.createResult.classList.remove('hidden');\n}\n\nfunction renderInboxes() {\n  if (!state.inboxes.length) {\n    elements.inboxList.innerHTML = '<div class=\"loading-row\">暂无邮箱，点击“创建随机邮箱”立即生成。</div>';\n    return;\n  }\n\n  elements.inboxList.innerHTML = state.inboxes.map((inbox) => `\n    <button class=\"inbox-item ${state.selectedInbox?.inbox_id === inbox.inbox_id ? 'active' : ''}\"\n      type=\"button\" data-inbox-id=\"${escapeHtml(inbox.inbox_id)}\">\n      <span class=\"address\">${escapeHtml(inbox.email || inbox.inbox_id)}</span>\n      <span class=\"meta\">${escapeHtml(inbox.display_name || '随机邮箱')} · ${formatDate(inbox.created_at, false)}</span>\n    </button>\n  `).join('');\n}\n\nfunction renderMessages() {\n  if (!state.selectedInbox) {\n    elements.messageList.className = 'message-list empty-state';\n    elements.messageList.innerHTML = '<div><div class=\"empty-icon\">✉</div><p>选择左侧邮箱后查看邮件</p></div>';\n    return;\n  }\n\n  elements.messageList.className = 'message-list';\n  if (!state.messages.length) {\n    elements.messageList.innerHTML = '<div class=\"loading-row\">这个邮箱暂时还没有邮件。</div>';\n    return;\n  }\n\n  elements.messageList.innerHTML = state.messages.map((message) => `\n    <button class=\"message-item ${state.selectedMessageId === message.message_id ? 'active' : ''}\"\n      type=\"button\" data-message-id=\"${escapeHtml(message.message_id)}\">\n      <span class=\"message-row\">\n        <span class=\"message-from\">${escapeHtml(message.from || '未知发件人')}</span>\n        <span class=\"message-time\">${formatDate(message.timestamp || message.created_at)}</span>\n      </span>\n      <span class=\"message-subject\">${escapeHtml(message.subject || '（无主题）')}</span>\n      <span class=\"message-preview\">${escapeHtml(message.preview || '暂无预览')}</span>\n    </button>\n  `).join('');\n}\n\nfunction renderMessageDetail(message) {\n  const textBody = message.text || message.preview || '这封邮件没有可显示的正文。';\n  const body = `<div class=\"message-body\"><pre>${escapeHtml(textBody)}</pre></div>`;\n  const attachments = Array.isArray(message.attachments) && message.attachments.length\n    ? `<div class=\"attachments\"><strong>附件</strong><div>${message.attachments.map((item) =>\n      `<span class=\"attachment-chip\">${escapeHtml(item.filename || '未命名附件')} (${Math.ceil((item.size || 0) / 1024)} KB)</span>`\n    ).join('')}</div></div>`\n    : '';\n\n  elements.messageViewer.className = 'message-detail';\n  elements.messageViewer.innerHTML = `\n    <header class=\"message-detail-header\">\n      <h2>${escapeHtml(message.subject || '（无主题）')}</h2>\n      <div class=\"message-meta\">\n        <div><strong>发件人：</strong>${escapeHtml(message.from || '未知')}</div>\n        <div><strong>收件人：</strong>${escapeHtml((message.to || []).join(', ') || '未知')}</div>\n        <div><strong>时间：</strong>${escapeHtml(formatDate(message.timestamp || message.created_at))}</div>\n      </div>\n    </header>\n    ${body}\n    <div class=\"message-body\">${attachments}</div>\n  `;\n}\n\nasync function checkHealth() {\n  try {\n    const result = await api('/api/health');\n    if (result.configured) {\n      elements.connectionStatus.textContent = '服务已连接';\n      elements.connectionStatus.className = 'status-pill online';\n    } else {\n      elements.connectionStatus.textContent = '未配置密钥';\n      elements.connectionStatus.className = 'status-pill offline';\n    }\n  } catch {\n    elements.connectionStatus.textContent = '服务不可用';\n    elements.connectionStatus.className = 'status-pill offline';\n  }\n}\n\nasync function loadInboxes({ preserveSelection = true, autoSelect = true } = {}) {\n  elements.inboxList.innerHTML = '<div class=\"loading-row\">正在加载邮箱…</div>';\n  try {\n    const data = await api('/api/inboxes?limit=100');\n    state.inboxes = data.inboxes || [];\n\n    if (preserveSelection && state.selectedInbox) {\n      state.selectedInbox = state.inboxes.find((item) => item.inbox_id === state.selectedInbox.inbox_id) || null;\n    }\n    renderInboxes();\n\n    if (!state.selectedInbox && autoSelect) {\n      const requestedInbox = state.requestedInboxId\n        ? state.inboxes.find((item) => item.inbox_id === state.requestedInboxId)\n        : null;\n      const inboxToSelect = requestedInbox || state.inboxes[0];\n      if (inboxToSelect) await selectInbox(inboxToSelect.inbox_id);\n      if (state.requestedInboxId && !requestedInbox) showToast('链接对应的邮箱不存在或已不可用');\n      state.requestedInboxId = null;\n    }\n  } catch (error) {\n    elements.inboxList.innerHTML = `<div class=\"error-box\">${escapeHtml(error.message)}</div>`;\n    showToast(error.message);\n  }\n}\n\nasync function selectInbox(inboxId) {\n  const inbox = state.inboxes.find((item) => item.inbox_id === inboxId);\n  if (!inbox) return;\n  state.selectedInbox = inbox;\n  state.selectedMessageId = null;\n  elements.selectedInboxTitle.textContent = inbox.email || inbox.inbox_id;\n  elements.copyAddressButton.classList.remove('hidden');\n  elements.messageViewer.className = 'viewer-empty';\n  elements.messageViewer.innerHTML = '<div><div class=\"empty-icon\">⌁</div><p>点击一封邮件查看正文</p></div>';\n  updateBrowserInboxUrl(inbox.inbox_id);\n  renderInboxes();\n  await loadMessages();\n}\n\nasync function loadMessages() {\n  if (!state.selectedInbox) return;\n  elements.messageList.className = 'message-list';\n  elements.messageList.innerHTML = '<div class=\"loading-row\">正在加载邮件…</div>';\n  const params = new URLSearchParams();\n  const search = elements.messageSearchInput.value.trim();\n  if (search) params.set('search', search);\n\n  try {\n    const suffix = params.toString() ? `?${params}` : '';\n    const data = await api(\n      `/api/inboxes/${encodeURIComponent(state.selectedInbox.inbox_id)}/messages${suffix}`\n    );\n    state.messages = (data.messages || []).sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));\n    renderMessages();\n  } catch (error) {\n    elements.messageList.innerHTML = `<div class=\"error-box\">${escapeHtml(error.message)}</div>`;\n    showToast(error.message);\n  }\n}\n\nasync function openMessage(messageId) {\n  if (!state.selectedInbox) return;\n  state.selectedMessageId = messageId;\n  renderMessages();\n  elements.messageViewer.className = 'viewer-empty';\n  elements.messageViewer.innerHTML = '<div><p>正在加载邮件正文…</p></div>';\n\n  try {\n    const message = await api(\n      `/api/inboxes/${encodeURIComponent(state.selectedInbox.inbox_id)}/messages/${encodeURIComponent(messageId)}`\n    );\n    renderMessageDetail(message);\n  } catch (error) {\n    elements.messageViewer.className = 'viewer-empty';\n    elements.messageViewer.innerHTML = `<div class=\"error-box\">${escapeHtml(error.message)}</div>`;\n    showToast(error.message);\n  }\n}\n\nelements.createInboxButton.addEventListener('click', async () => {\n  setBusy(elements.createInboxButton, true, '正在创建…');\n  try {\n    // 由 Cloudflare Worker 自动生成随机前缀，并使用 MoeMail 系统配置的邮箱域名。\n    const inbox = await api('/api/inboxes', {\n      method: 'POST',\n      body: JSON.stringify({})\n    });\n\n    showCreateResult(inbox);\n    showToast(`已创建 ${inbox.email || inbox.inbox_id}`);\n    await loadInboxes({ preserveSelection: false, autoSelect: false });\n\n    const exists = state.inboxes.some((item) => item.inbox_id === inbox.inbox_id);\n    if (!exists) state.inboxes.unshift(inbox);\n    await selectInbox(inbox.inbox_id);\n  } catch (error) {\n    showToast(error.message);\n  } finally {\n    setBusy(elements.createInboxButton, false, '正在创建…');\n  }\n});\n\nelements.closeCreateResultButton.addEventListener('click', () => {\n  elements.createResult.classList.add('hidden');\n});\n\nelements.copyCreatedEmailButton.addEventListener('click', () => {\n  copyText(elements.createdEmailName.textContent, '邮箱名称已复制');\n});\n\nelements.copyCreatedUrlButton.addEventListener('click', () => {\n  copyText(elements.createdInboxUrl.value, '查看邮件链接已复制');\n});\n\nelements.inboxList.addEventListener('click', (event) => {\n  const button = event.target.closest('[data-inbox-id]');\n  if (button) selectInbox(button.dataset.inboxId);\n});\n\nelements.messageList.addEventListener('click', (event) => {\n  const button = event.target.closest('[data-message-id]');\n  if (button) openMessage(button.dataset.messageId);\n});\n\nelements.copyAddressButton.addEventListener('click', () => {\n  if (state.selectedInbox?.email) copyText(state.selectedInbox.email, '邮箱地址已复制');\n});\n\nelements.refreshMessagesButton.addEventListener('click', loadMessages);\nelements.refreshAllButton.addEventListener('click', async () => {\n  await checkHealth();\n  await loadInboxes();\n});\n\nelements.messageSearchInput.addEventListener('input', () => {\n  window.clearTimeout(state.searchTimer);\n  state.searchTimer = window.setTimeout(loadMessages, 350);\n});\n\nawait checkHealth();\nawait loadInboxes();\n";
+const ADMIN_HTML = "<!doctype html>\n<html lang=\"zh-CN\">\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n  <meta name=\"color-scheme\" content=\"light dark\">\n  <meta name=\"description\" content=\"MoeMail 邮箱管理页面\">\n  <title>邮箱管理页面</title>\n  <link rel=\"stylesheet\" href=\"/style.css\">\n</head>\n<body class=\"admin-page\">\n  <div class=\"app-shell\">\n    <header class=\"topbar\">\n      <div>\n        <p class=\"eyebrow\">MOEMAIL 管理页面</p>\n        <h1>随机邮箱管理</h1>\n      </div>\n      <div class=\"topbar-actions\">\n        <span id=\"connectionStatus\" class=\"status-pill\">正在检查连接…</span>\n        <button id=\"refreshAllButton\" class=\"button ghost\" type=\"button\">刷新</button>\n      </div>\n    </header>\n\n    <main class=\"admin-layout\">\n      <aside class=\"panel inbox-panel\">\n        <div class=\"panel-header create-header\">\n          <div>\n            <p class=\"label\">管理邮箱</p>\n            <h2>我的邮箱</h2>\n          </div>\n          <button id=\"createInboxButton\" class=\"button primary\" type=\"button\">＋ 创建随机邮箱</button>\n        </div>\n\n        <section id=\"createResult\" class=\"create-result hidden\" aria-live=\"polite\">\n          <div class=\"result-heading\">\n            <div>\n              <p class=\"label success-label\">创建成功</p>\n              <h3>邮箱和专属链接已生成</h3>\n            </div>\n            <button id=\"closeCreateResultButton\" class=\"result-close\" type=\"button\" aria-label=\"关闭\">×</button>\n          </div>\n          <div class=\"result-field\">\n            <span>邮箱地址</span>\n            <div class=\"result-value-row\">\n              <code id=\"createdEmailName\"></code>\n              <button id=\"copyCreatedEmailButton\" class=\"button ghost compact\" type=\"button\">复制</button>\n            </div>\n          </div>\n          <div class=\"result-field\">\n            <span>独立查看邮件链接</span>\n            <input id=\"createdInboxUrl\" type=\"text\" readonly aria-label=\"独立查看邮件链接\">\n            <div class=\"result-actions\">\n              <button id=\"copyCreatedUrlButton\" class=\"button ghost\" type=\"button\">复制链接</button>\n              <a id=\"openCreatedUrlButton\" class=\"button primary link-button\" href=\"#\" target=\"_blank\" rel=\"noopener noreferrer\">打开专属页面</a>\n            </div>\n          </div>\n        </section>\n\n        <div id=\"inboxList\" class=\"inbox-list\" aria-live=\"polite\"></div>\n      </aside>\n\n      <section class=\"panel messages-panel\">\n        <div class=\"panel-header\">\n          <div class=\"truncate\">\n            <p class=\"label\">当前邮箱</p>\n            <h2 id=\"selectedInboxTitle\">请选择一个邮箱</h2>\n          </div>\n          <div class=\"header-actions\">\n            <button id=\"copyAddressButton\" class=\"button ghost hidden\" type=\"button\">复制地址</button>\n            <button id=\"copyViewerUrlButton\" class=\"button ghost hidden\" type=\"button\">复制专属链接</button>\n          </div>\n        </div>\n        <div class=\"toolbar\">\n          <input id=\"messageSearchInput\" type=\"search\" placeholder=\"搜索发件人或主题\" aria-label=\"搜索邮件\">\n          <button id=\"refreshMessagesButton\" class=\"button ghost\" type=\"button\">刷新邮件</button>\n        </div>\n        <div id=\"messageList\" class=\"message-list empty-state\">\n          <div><div class=\"empty-icon\">✉</div><p>选择一个邮箱后查看邮件</p></div>\n        </div>\n      </section>\n\n      <section class=\"panel viewer-panel\">\n        <div id=\"messageViewer\" class=\"viewer-empty\">\n          <div><div class=\"empty-icon\">⌁</div><p>点击一封邮件查看正文</p></div>\n        </div>\n      </section>\n    </main>\n  </div>\n  <div id=\"toast\" class=\"toast\" role=\"status\" aria-live=\"polite\"></div>\n  <script type=\"module\" src=\"/admin.js\"></script>\n</body>\n</html>\n";
+const VIEWER_HTML = "<!doctype html>\n<html lang=\"zh-CN\">\n<head>\n  <meta charset=\"utf-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n  <meta name=\"color-scheme\" content=\"light dark\">\n  <meta name=\"description\" content=\"独立邮箱收件页面\">\n  <title>查看邮箱邮件</title>\n  <link rel=\"stylesheet\" href=\"/style.css\">\n</head>\n<body class=\"public-page\">\n  <div class=\"public-shell\">\n    <header class=\"public-header panel\">\n      <div class=\"public-title\">\n        <p class=\"eyebrow\">独立邮件页面</p>\n        <h1 id=\"publicEmailAddress\">正在加载邮箱…</h1>\n        <p class=\"public-note\">此页面只用于查看这个邮箱的邮件，不提供创建或删除邮箱功能。</p>\n      </div>\n      <div class=\"topbar-actions\">\n        <span id=\"publicStatus\" class=\"status-pill\">正在连接…</span>\n        <button id=\"copyPublicAddressButton\" class=\"button ghost\" type=\"button\">复制邮箱</button>\n        <button id=\"refreshPublicButton\" class=\"button primary\" type=\"button\">刷新邮件</button>\n      </div>\n    </header>\n\n    <main class=\"public-layout\">\n      <section class=\"panel messages-panel\">\n        <div class=\"panel-header\">\n          <div>\n            <p class=\"label\">收到的邮件</p>\n            <h2>收件箱</h2>\n          </div>\n          <span id=\"messageCount\" class=\"count-badge\">0 封</span>\n        </div>\n        <div class=\"toolbar\">\n          <input id=\"publicSearchInput\" type=\"search\" placeholder=\"搜索发件人或主题\" aria-label=\"搜索邮件\">\n        </div>\n        <div id=\"publicMessageList\" class=\"message-list empty-state\">\n          <div><div class=\"empty-icon\">✉</div><p>正在加载邮件…</p></div>\n        </div>\n      </section>\n\n      <section class=\"panel viewer-panel\">\n        <div id=\"publicMessageViewer\" class=\"viewer-empty\">\n          <div><div class=\"empty-icon\">⌁</div><p>点击一封邮件查看正文</p></div>\n        </div>\n      </section>\n    </main>\n  </div>\n  <div id=\"toast\" class=\"toast\" role=\"status\" aria-live=\"polite\"></div>\n  <script type=\"module\" src=\"/viewer.js\"></script>\n</body>\n</html>\n";
+const STYLE_CSS = ":root {\n  --bg: #f5f7fb;\n  --panel: rgba(255,255,255,.95);\n  --text: #172033;\n  --muted: #6c768a;\n  --border: #e2e7f0;\n  --primary: #5b4df7;\n  --primary-strong: #4738e9;\n  --primary-soft: #efedff;\n  --success: #168a61;\n  --danger: #cf4058;\n  --danger-soft: #fff0f2;\n  --shadow: 0 16px 45px rgba(31,45,73,.08);\n}\n* { box-sizing: border-box; }\nhtml, body { min-height: 100%; }\nbody {\n  margin: 0;\n  color: var(--text);\n  background: radial-gradient(circle at 10% 0%, rgba(91,77,247,.13), transparent 30rem), var(--bg);\n  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;\n}\nbutton, input { font: inherit; }\nbutton { cursor: pointer; }\n.app-shell { max-width: 1600px; margin: 0 auto; padding: 22px; }\n.public-shell { max-width: 1240px; margin: 0 auto; padding: 22px; }\n.topbar, .public-header {\n  display: flex; justify-content: space-between; align-items: center; gap: 18px;\n}\n.topbar { margin-bottom: 16px; }\n.topbar h1, .public-header h1 { margin: 3px 0 0; font-size: clamp(24px, 4vw, 36px); letter-spacing: -.04em; overflow-wrap: anywhere; }\n.public-header { padding: 22px; margin-bottom: 16px; }\n.public-note { color: var(--muted); margin: 8px 0 0; font-size: 14px; }\n.eyebrow, .label { margin: 0; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }\n.topbar-actions, .header-actions, .result-actions { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }\n.admin-layout { display: grid; grid-template-columns: minmax(300px,.9fr) minmax(330px,1fr) minmax(400px,1.4fr); gap: 14px; min-height: calc(100vh - 115px); }\n.public-layout { display: grid; grid-template-columns: minmax(330px,.9fr) minmax(440px,1.4fr); gap: 14px; min-height: calc(100vh - 175px); }\n.panel { min-width: 0; overflow: hidden; border: 1px solid rgba(226,231,240,.95); border-radius: 21px; background: var(--panel); box-shadow: var(--shadow); backdrop-filter: blur(16px); }\n.panel-header { min-height: 82px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px; border-bottom: 1px solid var(--border); }\n.panel-header h2 { margin: 4px 0 0; font-size: 19px; }\n.button { border: 0; border-radius: 12px; padding: 10px 14px; font-weight: 750; text-decoration: none; transition: 150ms ease; }\n.button:disabled { opacity: .5; cursor: not-allowed; }\n.button.primary { color: white; background: var(--primary); }\n.button.primary:hover:not(:disabled) { background: var(--primary-strong); transform: translateY(-1px); }\n.button.ghost { color: var(--text); background: #eff2f7; }\n.button.ghost:hover:not(:disabled) { background: #e6eaf1; }\n.button.danger { color: var(--danger); background: var(--danger-soft); }\n.button.danger:hover:not(:disabled) { background: #ffe1e6; }\n.button.compact { padding: 8px 10px; font-size: 13px; }\n.link-button { display: inline-flex; align-items: center; justify-content: center; }\n.status-pill { display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; padding: 8px 11px; background: #eef1f6; color: var(--muted); font-size: 12px; font-weight: 800; }\n.status-pill::before { content: \"\"; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }\n.status-pill.online { color: var(--success); background: #e8f8f1; }\n.status-pill.offline { color: var(--danger); background: var(--danger-soft); }\n.count-badge { padding: 7px 10px; border-radius: 999px; color: var(--primary); background: var(--primary-soft); font-weight: 800; font-size: 12px; }\n.hidden { display: none !important; }\n.truncate { min-width: 0; }\n.truncate h2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n.create-result { margin: 12px; padding: 15px; border: 1px solid #cfeee1; border-radius: 15px; background: #f0fbf7; }\n.result-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }\n.result-heading h3 { margin: 4px 0 0; font-size: 17px; }\n.success-label { color: var(--success); }\n.result-close { border: 0; background: transparent; color: var(--muted); font-size: 26px; line-height: 1; }\n.result-field { display: grid; gap: 7px; margin-top: 14px; }\n.result-field > span { color: var(--muted); font-size: 12px; font-weight: 750; }\n.result-value-row { display: flex; align-items: center; gap: 8px; }\n.result-value-row code { min-width: 0; flex: 1; overflow-wrap: anywhere; font-weight: 800; }\ninput { width: 100%; border: 1px solid var(--border); border-radius: 12px; padding: 11px 12px; color: var(--text); background: #fff; outline: none; }\ninput:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(91,77,247,.12); }\n.inbox-list, .message-list, .viewer-panel { overflow-y: auto; }\n.inbox-list { max-height: calc(100vh - 205px); padding: 8px; }\n.inbox-card { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 10px; align-items: center; border-radius: 15px; padding: 8px; }\n.inbox-card:hover, .inbox-card.active { background: var(--primary-soft); }\n.inbox-select { min-width: 0; border: 0; background: transparent; color: inherit; text-align: left; padding: 7px; }\n.inbox-select .address { display: block; overflow-wrap: anywhere; font-weight: 820; }\n.inbox-select .meta { display: block; margin-top: 5px; color: var(--muted); font-size: 12px; }\n.inbox-actions { display: flex; gap: 6px; }\n.icon-action { border: 0; border-radius: 10px; padding: 8px; color: var(--muted); background: #eef1f6; font-size: 12px; font-weight: 800; }\n.icon-action:hover { color: var(--text); }\n.icon-action.delete:hover { color: var(--danger); background: var(--danger-soft); }\n.messages-panel { display: grid; grid-template-rows: auto auto 1fr; min-height: 0; }\n.toolbar { display: flex; gap: 8px; padding: 12px; border-bottom: 1px solid var(--border); }\n.toolbar input { min-width: 0; }\n.message-list { min-height: 0; }\n.message-item { width: 100%; display: grid; gap: 7px; padding: 15px 16px; border: 0; border-bottom: 1px solid var(--border); color: inherit; background: transparent; text-align: left; }\n.message-item:hover, .message-item.active { background: var(--primary-soft); }\n.message-row { display: flex; justify-content: space-between; gap: 12px; }\n.message-from, .message-subject { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n.message-from { font-weight: 820; }\n.message-time { flex: 0 0 auto; color: var(--muted); font-size: 12px; }\n.message-subject { font-weight: 730; }\n.message-preview { color: var(--muted); font-size: 13px; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }\n.viewer-panel { min-height: 0; }\n.viewer-empty, .empty-state { min-height: 100%; display: grid; place-items: center; color: var(--muted); text-align: center; padding: 24px; }\n.empty-icon { margin-bottom: 7px; font-size: 42px; opacity: .5; }\n.loading-row, .error-box { margin: 12px; padding: 16px; border-radius: 13px; color: var(--muted); background: #f2f4f8; text-align: center; }\n.error-box { color: var(--danger); background: var(--danger-soft); }\n.message-detail { min-height: 100%; }\n.message-detail-header { padding: 22px; border-bottom: 1px solid var(--border); }\n.message-detail-header h2 { margin: 0 0 15px; font-size: 24px; line-height: 1.25; overflow-wrap: anywhere; }\n.message-meta { display: grid; gap: 7px; color: var(--muted); font-size: 13px; }\n.message-meta strong { color: var(--text); }\n.message-body { padding: 22px; line-height: 1.75; overflow-wrap: anywhere; }\n.message-body pre { margin: 0; white-space: pre-wrap; font: inherit; }\n.attachments { margin-top: 14px; }\n.attachment-chip { display: inline-block; margin: 7px 7px 0 0; padding: 8px 10px; border-radius: 10px; background: #eff2f7; font-size: 12px; }\n.toast { position: fixed; left: 50%; bottom: 24px; z-index: 20; max-width: min(88vw,520px); padding: 11px 15px; border-radius: 12px; color: white; background: #172033; box-shadow: var(--shadow); transform: translate(-50%, 20px); opacity: 0; pointer-events: none; transition: 180ms ease; text-align: center; }\n.toast.show { transform: translate(-50%,0); opacity: 1; }\n@media (prefers-color-scheme: dark) {\n  :root { --bg:#0d1220; --panel:rgba(20,27,43,.96); --text:#f1f4fa; --muted:#9ca7bb; --border:#2a3346; --primary-soft:#2b2758; --danger-soft:#3c2028; }\n  input { background:#141b2b; }\n  .button.ghost, .icon-action, .loading-row { background:#242c3d; }\n  .button.ghost:hover:not(:disabled), .icon-action:hover { background:#30394c; }\n}\n@media (max-width: 1100px) {\n  .admin-layout { grid-template-columns: minmax(280px,.9fr) minmax(360px,1.2fr); }\n  .admin-layout .viewer-panel { grid-column: 1 / -1; min-height: 460px; }\n}\n@media (max-width: 760px) {\n  .app-shell, .public-shell { padding: 12px; }\n  .topbar, .public-header { align-items: flex-start; flex-direction: column; }\n  .topbar-actions { width: 100%; }\n  .admin-layout, .public-layout { display: block; min-height: auto; }\n  .admin-layout > .panel, .public-layout > .panel { margin-bottom: 12px; }\n  .inbox-list { max-height: 390px; }\n  .messages-panel { min-height: 520px; }\n  .viewer-panel { min-height: 520px !important; }\n  .panel-header { align-items: flex-start; }\n  .create-header { flex-direction: column; }\n  .create-header .button { width: 100%; }\n  .header-actions { width: 100%; }\n  .header-actions .button { flex: 1; }\n  .toolbar { align-items: stretch; }\n  .public-header .topbar-actions .button { flex: 1; }\n}\n";
+const ADMIN_JS = "const state = { inboxes: [], selectedInbox: null, messages: [], selectedMessageId: null, searchTimer: null };\nconst $ = (selector) => document.querySelector(selector);\nconst elements = {\n  connectionStatus: $('#connectionStatus'), refreshAllButton: $('#refreshAllButton'), createInboxButton: $('#createInboxButton'),\n  createResult: $('#createResult'), closeCreateResultButton: $('#closeCreateResultButton'), createdEmailName: $('#createdEmailName'),\n  createdInboxUrl: $('#createdInboxUrl'), copyCreatedEmailButton: $('#copyCreatedEmailButton'), copyCreatedUrlButton: $('#copyCreatedUrlButton'),\n  openCreatedUrlButton: $('#openCreatedUrlButton'), inboxList: $('#inboxList'), selectedInboxTitle: $('#selectedInboxTitle'),\n  copyAddressButton: $('#copyAddressButton'), copyViewerUrlButton: $('#copyViewerUrlButton'), messageSearchInput: $('#messageSearchInput'),\n  refreshMessagesButton: $('#refreshMessagesButton'), messageList: $('#messageList'), messageViewer: $('#messageViewer'), toast: $('#toast')\n};\nasync function api(path, options = {}) {\n  const response = await fetch(path, { ...options, headers: { Accept:'application/json', ...(options.body ? {'Content-Type':'application/json'} : {}), ...(options.headers || {}) } });\n  let payload; try { payload = await response.json(); } catch { payload = { error:'服务器返回了无法解析的内容。' }; }\n  if (!response.ok) throw new Error(payload.error || `请求失败（${response.status}）`);\n  return payload;\n}\nfunction escapeHtml(value='') { return String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\"','&quot;').replaceAll(\"'\",'&#039;'); }\nfunction formatDate(value, includeTime=true) { if (!value) return '未知时间'; const d=new Date(value); if (Number.isNaN(d.getTime())) return String(value); return new Intl.DateTimeFormat('zh-CN',{month:'short',day:'numeric',...(includeTime?{hour:'2-digit',minute:'2-digit'}:{}),hour12:false}).format(d); }\nfunction showToast(message) { elements.toast.textContent=message; elements.toast.classList.add('show'); clearTimeout(showToast.timer); showToast.timer=setTimeout(()=>elements.toast.classList.remove('show'),2400); }\nfunction setBusy(button,busy,label) { button.disabled=busy; if(!button.dataset.originalText) button.dataset.originalText=button.textContent.trim(); button.textContent=busy?label:button.dataset.originalText; }\nasync function copyText(value,message) { try { await navigator.clipboard.writeText(value); showToast(message); } catch { showToast('复制失败，请手动复制'); } }\nfunction showCreateResult(inbox) { elements.createdEmailName.textContent=inbox.email||inbox.inbox_id; elements.createdInboxUrl.value=inbox.viewer_url; elements.openCreatedUrlButton.href=inbox.viewer_url; elements.createResult.classList.remove('hidden'); }\nfunction renderInboxes() {\n  if(!state.inboxes.length){ elements.inboxList.innerHTML='<div class=\"loading-row\">暂无邮箱，点击“创建随机邮箱”即可生成。</div>'; return; }\n  elements.inboxList.innerHTML=state.inboxes.map(inbox=>`\n    <div class=\"inbox-card ${state.selectedInbox?.inbox_id===inbox.inbox_id?'active':''}\">\n      <button class=\"inbox-select\" type=\"button\" data-select-inbox=\"${escapeHtml(inbox.inbox_id)}\">\n        <span class=\"address\">${escapeHtml(inbox.email||inbox.inbox_id)}</span>\n        <span class=\"meta\">${formatDate(inbox.created_at,false)}</span>\n      </button>\n      <div class=\"inbox-actions\">\n        <button class=\"icon-action\" type=\"button\" data-copy-link=\"${escapeHtml(inbox.inbox_id)}\">链接</button>\n        <button class=\"icon-action delete\" type=\"button\" data-delete-inbox=\"${escapeHtml(inbox.inbox_id)}\">删除</button>\n      </div>\n    </div>`).join('');\n}\nfunction renderMessages(){\n  if(!state.selectedInbox){ elements.messageList.className='message-list empty-state'; elements.messageList.innerHTML='<div><div class=\"empty-icon\">✉</div><p>选择一个邮箱后查看邮件</p></div>'; return; }\n  elements.messageList.className='message-list';\n  if(!state.messages.length){ elements.messageList.innerHTML='<div class=\"loading-row\">这个邮箱暂时还没有邮件。</div>'; return; }\n  elements.messageList.innerHTML=state.messages.map(message=>`\n    <button class=\"message-item ${state.selectedMessageId===message.message_id?'active':''}\" type=\"button\" data-message-id=\"${escapeHtml(message.message_id)}\">\n      <span class=\"message-row\"><span class=\"message-from\">${escapeHtml(message.from||'未知发件人')}</span><span class=\"message-time\">${formatDate(message.timestamp)}</span></span>\n      <span class=\"message-subject\">${escapeHtml(message.subject||'（无主题）')}</span><span class=\"message-preview\">${escapeHtml(message.preview||'暂无预览')}</span>\n    </button>`).join('');\n}\nfunction renderMessageDetail(message){\n  const attachments=Array.isArray(message.attachments)&&message.attachments.length?`<div class=\"attachments\"><strong>附件</strong><div>${message.attachments.map(a=>`<span class=\"attachment-chip\">${escapeHtml(a.filename||'未命名附件')} (${Math.ceil((a.size||0)/1024)} KB)</span>`).join('')}</div></div>`:'';\n  elements.messageViewer.className='message-detail'; elements.messageViewer.innerHTML=`<header class=\"message-detail-header\"><h2>${escapeHtml(message.subject||'（无主题）')}</h2><div class=\"message-meta\"><div><strong>发件人：</strong>${escapeHtml(message.from||'未知')}</div><div><strong>收件人：</strong>${escapeHtml((message.to||[]).join(', ')||'未知')}</div><div><strong>时间：</strong>${escapeHtml(formatDate(message.timestamp))}</div></div></header><div class=\"message-body\"><pre>${escapeHtml(message.text||'这封邮件没有可显示的正文。')}</pre>${attachments}</div>`;\n}\nasync function checkHealth(){ try{const data=await api('/api/admin/health'); elements.connectionStatus.textContent=data.configured?'服务已连接':'未配置密钥'; elements.connectionStatus.className=`status-pill ${data.configured?'online':'offline'}`;}catch{elements.connectionStatus.textContent='服务不可用';elements.connectionStatus.className='status-pill offline';}}\nasync function loadInboxes({selectFirst=true}={}){\n  elements.inboxList.innerHTML='<div class=\"loading-row\">正在加载邮箱…</div>';\n  try{const data=await api('/api/admin/inboxes'); const selectedId=state.selectedInbox?.inbox_id; state.inboxes=data.inboxes||[]; state.selectedInbox=state.inboxes.find(x=>x.inbox_id===selectedId)||null; renderInboxes(); if(!state.selectedInbox&&selectFirst&&state.inboxes[0]) await selectInbox(state.inboxes[0].inbox_id);}catch(e){elements.inboxList.innerHTML=`<div class=\"error-box\">${escapeHtml(e.message)}</div>`;showToast(e.message);}\n}\nasync function selectInbox(id){const inbox=state.inboxes.find(x=>x.inbox_id===id);if(!inbox)return;state.selectedInbox=inbox;state.selectedMessageId=null;elements.selectedInboxTitle.textContent=inbox.email||inbox.inbox_id;elements.copyAddressButton.classList.remove('hidden');elements.copyViewerUrlButton.classList.remove('hidden');elements.messageViewer.className='viewer-empty';elements.messageViewer.innerHTML='<div><div class=\"empty-icon\">⌁</div><p>点击一封邮件查看正文</p></div>';renderInboxes();await loadMessages();}\nasync function loadMessages(){if(!state.selectedInbox)return;elements.messageList.className='message-list';elements.messageList.innerHTML='<div class=\"loading-row\">正在加载邮件…</div>';const q=elements.messageSearchInput.value.trim();try{const suffix=q?`?search=${encodeURIComponent(q)}`:'';const data=await api(`/api/admin/inboxes/${encodeURIComponent(state.selectedInbox.inbox_id)}/messages${suffix}`);state.messages=(data.messages||[]).sort((a,b)=>new Date(b.timestamp||0)-new Date(a.timestamp||0));renderMessages();}catch(e){elements.messageList.innerHTML=`<div class=\"error-box\">${escapeHtml(e.message)}</div>`;showToast(e.message);}}\nasync function openMessage(id){if(!state.selectedInbox)return;state.selectedMessageId=id;renderMessages();elements.messageViewer.className='viewer-empty';elements.messageViewer.innerHTML='<div><p>正在加载邮件正文…</p></div>';try{const m=await api(`/api/admin/inboxes/${encodeURIComponent(state.selectedInbox.inbox_id)}/messages/${encodeURIComponent(id)}`);renderMessageDetail(m);}catch(e){elements.messageViewer.innerHTML=`<div class=\"error-box\">${escapeHtml(e.message)}</div>`;showToast(e.message);}}\nasync function deleteInbox(id){const inbox=state.inboxes.find(x=>x.inbox_id===id);if(!inbox)return;const ok=window.confirm(`确定删除邮箱“${inbox.email||id}”吗？\\n\\n删除后该邮箱和邮件可能无法恢复，专属查看链接也会立即失效。`);if(!ok)return;try{await api(`/api/admin/inboxes/${encodeURIComponent(id)}`,{method:'DELETE'});showToast('邮箱已删除');if(state.selectedInbox?.inbox_id===id){state.selectedInbox=null;state.messages=[];elements.selectedInboxTitle.textContent='请选择一个邮箱';elements.copyAddressButton.classList.add('hidden');elements.copyViewerUrlButton.classList.add('hidden');elements.messageViewer.className='viewer-empty';elements.messageViewer.innerHTML='<div><div class=\"empty-icon\">⌁</div><p>点击一封邮件查看正文</p></div>';}await loadInboxes();}catch(e){showToast(e.message);}}\nelements.createInboxButton.addEventListener('click',async()=>{setBusy(elements.createInboxButton,true,'正在创建…');try{const inbox=await api('/api/admin/inboxes',{method:'POST',body:'{}'});showCreateResult(inbox);showToast(`已创建 ${inbox.email}`);await loadInboxes({selectFirst:false});if(!state.inboxes.some(x=>x.inbox_id===inbox.inbox_id))state.inboxes.unshift(inbox);await selectInbox(inbox.inbox_id);}catch(e){showToast(e.message);}finally{setBusy(elements.createInboxButton,false,'正在创建…');}});\nelements.closeCreateResultButton.addEventListener('click',()=>elements.createResult.classList.add('hidden'));\nelements.copyCreatedEmailButton.addEventListener('click',()=>copyText(elements.createdEmailName.textContent,'邮箱地址已复制'));\nelements.copyCreatedUrlButton.addEventListener('click',()=>copyText(elements.createdInboxUrl.value,'专属链接已复制'));\nelements.copyAddressButton.addEventListener('click',()=>state.selectedInbox&&copyText(state.selectedInbox.email,'邮箱地址已复制'));\nelements.copyViewerUrlButton.addEventListener('click',()=>state.selectedInbox&&copyText(state.selectedInbox.viewer_url,'专属链接已复制'));\nelements.inboxList.addEventListener('click',event=>{const select=event.target.closest('[data-select-inbox]');if(select)return selectInbox(select.dataset.selectInbox);const copy=event.target.closest('[data-copy-link]');if(copy){const inbox=state.inboxes.find(x=>x.inbox_id===copy.dataset.copyLink);if(inbox)copyText(inbox.viewer_url,'专属链接已复制');return;}const del=event.target.closest('[data-delete-inbox]');if(del)deleteInbox(del.dataset.deleteInbox);});\nelements.messageList.addEventListener('click',event=>{const button=event.target.closest('[data-message-id]');if(button)openMessage(button.dataset.messageId);});\nelements.refreshMessagesButton.addEventListener('click',loadMessages);elements.refreshAllButton.addEventListener('click',async()=>{await checkHealth();await loadInboxes();});\nelements.messageSearchInput.addEventListener('input',()=>{clearTimeout(state.searchTimer);state.searchTimer=setTimeout(loadMessages,350);});\nawait checkHealth();await loadInboxes();\n";
+const VIEWER_JS = "const pathParts=location.pathname.split('/').filter(Boolean);const inboxId=decodeURIComponent(pathParts[1]||'');const params=new URLSearchParams(location.search);const address=params.get('address')||'';const token=params.get('token')||'';\nconst $=s=>document.querySelector(s);const el={address:$('#publicEmailAddress'),status:$('#publicStatus'),copy:$('#copyPublicAddressButton'),refresh:$('#refreshPublicButton'),search:$('#publicSearchInput'),list:$('#publicMessageList'),viewer:$('#publicMessageViewer'),count:$('#messageCount'),toast:$('#toast')};\nconst state={messages:[],selectedMessageId:null,timer:null};\nfunction escapeHtml(v=''){return String(v).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('\"','&quot;').replaceAll(\"'\",'&#039;');}\nfunction formatDate(v){if(!v)return'未知时间';const d=new Date(v);if(Number.isNaN(d.getTime()))return String(v);return new Intl.DateTimeFormat('zh-CN',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(d);}\nfunction toast(m){el.toast.textContent=m;el.toast.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.toast.classList.remove('show'),2300);}\nasync function api(path){const r=await fetch(path,{headers:{Accept:'application/json'}});let p;try{p=await r.json();}catch{p={error:'服务器返回了无法解析的内容。'};}if(!r.ok)throw new Error(p.error||`请求失败（${r.status}）`);return p;}\nfunction authQuery(extra=''){const q=new URLSearchParams({address,token});if(extra)q.set('search',extra);return q.toString();}\nfunction renderList(){el.count.textContent=`${state.messages.length} 封`;if(!state.messages.length){el.list.className='message-list empty-state';el.list.innerHTML='<div><div class=\"empty-icon\">✉</div><p>这个邮箱暂时还没有邮件</p></div>';return;}el.list.className='message-list';el.list.innerHTML=state.messages.map(m=>`<button class=\"message-item ${state.selectedMessageId===m.message_id?'active':''}\" type=\"button\" data-message-id=\"${escapeHtml(m.message_id)}\"><span class=\"message-row\"><span class=\"message-from\">${escapeHtml(m.from||'未知发件人')}</span><span class=\"message-time\">${formatDate(m.timestamp)}</span></span><span class=\"message-subject\">${escapeHtml(m.subject||'（无主题）')}</span><span class=\"message-preview\">${escapeHtml(m.preview||'暂无预览')}</span></button>`).join('');}\nfunction renderDetail(m){const attachments=Array.isArray(m.attachments)&&m.attachments.length?`<div class=\"attachments\"><strong>附件</strong><div>${m.attachments.map(a=>`<span class=\"attachment-chip\">${escapeHtml(a.filename||'未命名附件')} (${Math.ceil((a.size||0)/1024)} KB)</span>`).join('')}</div></div>`:'';el.viewer.className='message-detail';el.viewer.innerHTML=`<header class=\"message-detail-header\"><h2>${escapeHtml(m.subject||'（无主题）')}</h2><div class=\"message-meta\"><div><strong>发件人：</strong>${escapeHtml(m.from||'未知')}</div><div><strong>收件人：</strong>${escapeHtml((m.to||[]).join(', ')||address||'未知')}</div><div><strong>时间：</strong>${escapeHtml(formatDate(m.timestamp))}</div></div></header><div class=\"message-body\"><pre>${escapeHtml(m.text||'这封邮件没有可显示的正文。')}</pre>${attachments}</div>`;}\nasync function loadMessages(){if(!inboxId||!token){el.status.textContent='链接无效';el.status.className='status-pill offline';el.list.innerHTML='<div class=\"error-box\">专属链接不完整或已失效。</div>';return;}el.refresh.disabled=true;el.list.className='message-list';el.list.innerHTML='<div class=\"loading-row\">正在加载邮件…</div>';try{const data=await api(`/api/public/inboxes/${encodeURIComponent(inboxId)}/messages?${authQuery(el.search.value.trim())}`);state.messages=(data.messages||[]).sort((a,b)=>new Date(b.timestamp||0)-new Date(a.timestamp||0));el.status.textContent='邮箱已连接';el.status.className='status-pill online';renderList();}catch(e){el.status.textContent='无法访问';el.status.className='status-pill offline';el.list.innerHTML=`<div class=\"error-box\">${escapeHtml(e.message)}</div>`;toast(e.message);}finally{el.refresh.disabled=false;}}\nasync function openMessage(id){state.selectedMessageId=id;renderList();el.viewer.className='viewer-empty';el.viewer.innerHTML='<div><p>正在加载邮件正文…</p></div>';try{const m=await api(`/api/public/inboxes/${encodeURIComponent(inboxId)}/messages/${encodeURIComponent(id)}?${authQuery()}`);renderDetail(m);}catch(e){el.viewer.innerHTML=`<div class=\"error-box\">${escapeHtml(e.message)}</div>`;toast(e.message);}}\nel.address.textContent=address||'专属邮箱';document.title=`${address||'邮箱'} - 查看邮件`;\nel.copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(address);toast('邮箱地址已复制');}catch{toast('复制失败，请手动复制');}});\nel.refresh.addEventListener('click',loadMessages);el.list.addEventListener('click',e=>{const b=e.target.closest('[data-message-id]');if(b)openMessage(b.dataset.messageId);});el.search.addEventListener('input',()=>{clearTimeout(state.timer);state.timer=setTimeout(loadMessages,350);});\nawait loadMessages();setInterval(()=>{if(document.visibilityState==='visible')loadMessages();},15000);\n";
+
 const DEFAULT_MOEMAIL_BASE_URL = 'https://mat.work4.ggff.net';
 const API_TIMEOUT_MS = 15_000;
 const JSON_BODY_LIMIT = 32 * 1024;
-
 const SECURITY_HEADERS = {
   'Content-Security-Policy': [
-    "default-src 'self'",
-    "script-src 'self'",
-    "style-src 'self'",
-    "img-src 'self' data:",
-    "connect-src 'self'",
-    "frame-src 'none'",
-    "frame-ancestors 'none'",
-    "object-src 'none'",
-    "base-uri 'self'",
-    "form-action 'self'"
+    "default-src 'self'", "script-src 'self'", "style-src 'self'", "img-src 'self' data:",
+    "connect-src 'self'", "frame-src 'none'", "frame-ancestors 'none'", "object-src 'none'",
+    "base-uri 'self'", "form-action 'self'"
   ].join('; '),
   'Cross-Origin-Resource-Policy': 'same-origin',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
@@ -24,394 +19,57 @@ const SECURITY_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY'
 };
-
-function json(payload, status = 200, extraHeaders = {}) {
-  return new Response(JSON.stringify(payload), {
-    status,
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'no-store',
-      ...SECURITY_HEADERS,
-      ...extraHeaders
-    }
-  });
+function json(payload, status=200, extra={}) { return new Response(JSON.stringify(payload), {status, headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store',...SECURITY_HEADERS,...extra}}); }
+function text(message, status=200, extra={}) { return new Response(message, {status, headers:{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store',...SECURITY_HEADERS,...extra}}); }
+function html(content, status=200) { return new Response(content, {status, headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store',...SECURITY_HEADERS}}); }
+function unauthorized() { return text('需要登录或用户名、密码错误。',401,{'WWW-Authenticate':'Basic realm="邮箱管理页面", charset="UTF-8"'}); }
+function createHttpError(message,status=400){const e=new Error(message);e.status=status;return e;}
+async function constantTimeEqual(a,b){const enc=new TextEncoder();const [x,y]=await Promise.all([crypto.subtle.digest('SHA-256',enc.encode(String(a))),crypto.subtle.digest('SHA-256',enc.encode(String(b)))]);const xa=new Uint8Array(x),ya=new Uint8Array(y);let d=xa.length^ya.length;for(let i=0;i<xa.length;i++)d|=xa[i]^ya[i];return d===0;}
+async function isAuthorized(request,env){const username=env.APP_USERNAME?.trim(),password=env.APP_PASSWORD;if(!username||!password)return true;const auth=request.headers.get('Authorization')||'';if(!auth.startsWith('Basic '))return false;try{const decoded=atob(auth.slice(6)),i=decoded.indexOf(':');if(i<0)return false;const [u,p]=[decoded.slice(0,i),decoded.slice(i+1)];const [um,pm]=await Promise.all([constantTimeEqual(u,username),constantTimeEqual(p,password)]);return um&&pm;}catch{return false;}}
+function getApiKey(env){return env.MOEMAIL_API_KEY?.trim()||env.AGENTMAIL_API_KEY?.trim()||'';}
+function getLinkSecret(env){return env.PUBLIC_LINK_SECRET?.trim()||getApiKey(env);}
+function safeId(value,name){if(typeof value!=='string'||value.length<1||value.length>256||value.includes('/')||value.includes('\\')||!/^[\p{L}\p{N}_.+@:=\-]+$/u.test(value))throw createHttpError(`${name}格式不正确。`,400);return value;}
+function pathParts(pathname){return pathname.split('/').filter(Boolean).map(p=>{try{return decodeURIComponent(p);}catch{throw createHttpError('链接编码不正确。',400);}});}
+async function readJsonBody(request){const length=Number(request.headers.get('Content-Length')||0);if(length>JSON_BODY_LIMIT)throw createHttpError('请求内容过大。',413);const raw=await request.text();if(new TextEncoder().encode(raw).byteLength>JSON_BODY_LIMIT)throw createHttpError('请求内容过大。',413);if(!raw)return{};try{const value=JSON.parse(raw);if(!value||Array.isArray(value)||typeof value!=='object')throw new Error();return value;}catch{throw createHttpError('请求数据格式不正确。',400);}}
+async function moeMailRequest(env,endpoint,options={}){const apiKey=getApiKey(env);if(!apiKey)throw createHttpError('尚未配置 MOEMAIL_API_KEY。',503);const base=(env.MOEMAIL_BASE_URL||DEFAULT_MOEMAIL_BASE_URL).replace(/\/$/,'');const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),API_TIMEOUT_MS);try{const response=await fetch(`${base}${endpoint}`,{...options,headers:{'X-API-Key':apiKey,Accept:'application/json',...(options.body?{'Content-Type':'application/json'}:{}),...(options.headers||{})},signal:controller.signal});let payload={};if(response.status!==204){const type=response.headers.get('Content-Type')||'';payload=type.includes('application/json')?await response.json().catch(()=>({})): {message:await response.text()};}if(!response.ok){const message=payload?.message||payload?.error||payload?.detail||`MoeMail 接口返回 ${response.status}`;throw createHttpError(String(message),response.status>=400&&response.status<500?response.status:502);}return payload;}catch(e){if(e?.name==='AbortError')throw createHttpError('MoeMail 接口响应超时。',504);throw e;}finally{clearTimeout(timer);}}
+function decodeHtmlEntities(value){const named={amp:'&',lt:'<',gt:'>',quot:'"',apos:"'",nbsp:' '};return value.replace(/&(#x?[0-9a-f]+|[a-z]+);/gi,(m,e)=>{const l=e.toLowerCase();if(l.startsWith('#x')){const c=parseInt(l.slice(2),16);return Number.isFinite(c)?String.fromCodePoint(c):m;}if(l.startsWith('#')){const c=parseInt(l.slice(1),10);return Number.isFinite(c)?String.fromCodePoint(c):m;}return named[l]??m;});}
+function htmlToPlainText(value){if(typeof value!=='string'||!value)return'';return decodeHtmlEntities(value.replace(/<!--[\s\S]*?-->/g,' ').replace(/<(script|style|svg|math|iframe|object|embed|form)[^>]*>[\s\S]*?<\/\1\s*>/gi,' ').replace(/<(br|hr)\s*\/?>/gi,'\n').replace(/<\/(p|div|li|tr|h[1-6])\s*>/gi,'\n').replace(/<[^>]+>/g,' ')).replace(/\r/g,'').replace(/[\t ]+/g,' ').replace(/ *\n */g,'\n').replace(/\n{3,}/g,'\n\n').trim();}
+function normalizeInbox(item={}){return{inbox_id:String(item.id||item.inbox_id||''),email:String(item.address||item.email||''),created_at:item.createdAt||item.created_at||new Date().toISOString(),expires_at:item.expiresAt||item.expires_at||null};}
+function normalizeMessageSummary(item={}){return{message_id:String(item.id||item.message_id||''),from:String(item.from_address||item.fromAddress||item.from||''),subject:String(item.subject||''),preview:String(item.preview||item.content||htmlToPlainText(item.html||'')).slice(0,240),timestamp:item.received_at||item.receivedAt||item.timestamp||item.created_at||null};}
+function normalizeMessageDetail(payload={}){const m=payload.message||payload;const recipient=m.to_address||m.toAddress||m.to||'';return{message_id:String(m.id||m.message_id||''),from:String(m.from_address||m.fromAddress||m.from||''),to:Array.isArray(recipient)?recipient.map(String):(recipient?[String(recipient)]:[]),subject:String(m.subject||''),text:String(m.content||m.text||htmlToPlainText(m.html||'')||'').slice(0,500000),timestamp:m.received_at||m.receivedAt||m.timestamp||m.created_at||null,attachments:Array.isArray(m.attachments)?m.attachments:[]};}
+function parseDomains(config={}){const raw=config.emailDomains||config.email_domains||config.domains||'';return(Array.isArray(raw)?raw:String(raw).split(',')).map(v=>String(v).trim()).filter(Boolean);}
+function parseExpiryTime(env){const allowed=new Set([0,3600000,86400000,604800000]);const value=Number(env.MOEMAIL_EXPIRY_TIME??0);return allowed.has(value)?value:0;}
+function randomMailboxName(){const bytes=new Uint8Array(7);crypto.getRandomValues(bytes);return`m${Date.now().toString(36)}${Array.from(bytes,b=>(b%36).toString(36)).join('')}`.slice(0,32);}
+function bytesToBase64Url(bytes){let binary='';for(const b of bytes)binary+=String.fromCharCode(b);return btoa(binary).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'');}
+async function createViewerToken(env,inboxId,address){const secret=getLinkSecret(env);if(!secret)throw createHttpError('尚未配置邮箱 API 密钥，无法生成专属链接。',503);const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']);const signature=await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(`v1\n${inboxId}\n${address}`));return bytesToBase64Url(new Uint8Array(signature));}
+async function verifyViewerToken(env,inboxId,address,token){if(!token||token.length>128)return false;const expected=await createViewerToken(env,inboxId,address);return constantTimeEqual(expected,token);}
+async function withViewerUrl(request,env,inbox){return{...inbox,viewer_url:await buildViewerUrl(request,env,inbox)};}
+async function buildViewerUrl(request,env,inbox){const origin=new URL(request.url).origin;const token=await createViewerToken(env,inbox.inbox_id,inbox.email);const url=new URL(`/mail/${encodeURIComponent(inbox.inbox_id)}`,origin);url.searchParams.set('address',inbox.email);url.searchParams.set('token',token);return url.toString();}
+async function listMessages(env,inboxId,search=''){const data=await moeMailRequest(env,`/api/emails/${encodeURIComponent(inboxId)}`);let messages=(Array.isArray(data.messages)?data.messages:Array.isArray(data.data)?data.data:[]).map(normalizeMessageSummary).filter(m=>m.message_id);const q=search.trim().toLowerCase().slice(0,100);if(q)messages=messages.filter(m=>m.subject.toLowerCase().includes(q)||m.from.toLowerCase().includes(q));return{messages,next_page_token:data.nextCursor||null,total:Number(data.total??messages.length)};}
+async function handleAdminApi(request,env,url){if(!(await isAuthorized(request,env)))return unauthorized();const parts=pathParts(url.pathname);
+  if(request.method==='GET'&&url.pathname==='/api/admin/health'){if(!getApiKey(env))return json({ok:true,configured:false});const config=await moeMailRequest(env,'/api/config');return json({ok:true,configured:true,domains:parseDomains(config)});}
+  if(request.method==='GET'&&parts.length===3&&parts[0]==='api'&&parts[1]==='admin'&&parts[2]==='inboxes'){const data=await moeMailRequest(env,'/api/emails');const raw=Array.isArray(data.emails)?data.emails:Array.isArray(data.data)?data.data:Array.isArray(data)?data:[];const inboxes=[];for(const item of raw){const inbox=normalizeInbox(item);if(inbox.inbox_id)inboxes.push(await withViewerUrl(request,env,inbox));}return json({inboxes,total:Number(data.total??inboxes.length)});}
+  if(request.method==='POST'&&parts.length===3&&parts[0]==='api'&&parts[1]==='admin'&&parts[2]==='inboxes'){await readJsonBody(request);const config=await moeMailRequest(env,'/api/config');const domain=env.MOEMAIL_DOMAIN?.trim()||parseDomains(config)[0];if(!domain)throw createHttpError('MoeMail 系统没有配置可用邮箱域名。',502);let last;for(let attempt=0;attempt<3;attempt++){try{const data=await moeMailRequest(env,'/api/emails/generate',{method:'POST',body:JSON.stringify({name:randomMailboxName(),expiryTime:parseExpiryTime(env),domain})});return json(await withViewerUrl(request,env,normalizeInbox(data)),201);}catch(e){last=e;if(e.status!==409)throw e;}}throw last||createHttpError('创建随机邮箱失败。',502);}
+  if(request.method==='DELETE'&&parts.length===4&&parts[0]==='api'&&parts[1]==='admin'&&parts[2]==='inboxes'){const id=safeId(parts[3],'邮箱编号');await moeMailRequest(env,`/api/emails/${encodeURIComponent(id)}`,{method:'DELETE'});return json({ok:true});}
+  if(request.method==='GET'&&parts.length===5&&parts[0]==='api'&&parts[1]==='admin'&&parts[2]==='inboxes'&&parts[4]==='messages'){return json(await listMessages(env,safeId(parts[3],'邮箱编号'),url.searchParams.get('search')||''));}
+  if(request.method==='GET'&&parts.length===6&&parts[0]==='api'&&parts[1]==='admin'&&parts[2]==='inboxes'&&parts[4]==='messages'){const inboxId=safeId(parts[3],'邮箱编号'),messageId=safeId(parts[5],'邮件编号');return json(normalizeMessageDetail(await moeMailRequest(env,`/api/emails/${encodeURIComponent(inboxId)}/${encodeURIComponent(messageId)}`)));}
+  return json({error:'管理接口不存在。'},404);
 }
-
-function text(message, status = 200, extraHeaders = {}) {
-  return new Response(message, {
-    status,
-    headers: {
-      'Content-Type': 'text/plain; charset=utf-8',
-      'Cache-Control': 'no-store',
-      ...SECURITY_HEADERS,
-      ...extraHeaders
-    }
-  });
+async function validatePublicRequest(env,url,inboxId){const address=(url.searchParams.get('address')||'').slice(0,320);const token=(url.searchParams.get('token')||'').slice(0,160);if(!address||!(await verifyViewerToken(env,inboxId,address,token)))throw createHttpError('专属链接无效或已经失效。',403);return address;}
+async function handlePublicApi(request,env,url){const parts=pathParts(url.pathname);
+  if(request.method==='GET'&&parts.length===5&&parts[0]==='api'&&parts[1]==='public'&&parts[2]==='inboxes'&&parts[4]==='messages'){const id=safeId(parts[3],'邮箱编号');const address=await validatePublicRequest(env,url,id);return json({address,...await listMessages(env,id,url.searchParams.get('search')||'')});}
+  if(request.method==='GET'&&parts.length===6&&parts[0]==='api'&&parts[1]==='public'&&parts[2]==='inboxes'&&parts[4]==='messages'){const id=safeId(parts[3],'邮箱编号');await validatePublicRequest(env,url,id);const mid=safeId(parts[5],'邮件编号');return json(normalizeMessageDetail(await moeMailRequest(env,`/api/emails/${encodeURIComponent(id)}/${encodeURIComponent(mid)}`)));}
+  return json({error:'公开查看接口不存在。'},404);
 }
-
-function unauthorized() {
-  return text('需要登录或用户名、密码错误。', 401, {
-    'WWW-Authenticate': 'Basic realm="邮箱控制台", charset="UTF-8"'
-  });
-}
-
-async function constantTimeEqual(left, right) {
-  const encoder = new TextEncoder();
-  const [leftDigest, rightDigest] = await Promise.all([
-    crypto.subtle.digest('SHA-256', encoder.encode(String(left))),
-    crypto.subtle.digest('SHA-256', encoder.encode(String(right)))
-  ]);
-  const leftBytes = new Uint8Array(leftDigest);
-  const rightBytes = new Uint8Array(rightDigest);
-  let difference = leftBytes.length ^ rightBytes.length;
-  for (let index = 0; index < leftBytes.length; index += 1) {
-    difference |= leftBytes[index] ^ rightBytes[index];
-  }
-  return difference === 0;
-}
-
-async function isAuthorized(request, env) {
-  const username = env.APP_USERNAME?.trim();
-  const password = env.APP_PASSWORD;
-  if (!username || !password) return true;
-
-  const authorization = request.headers.get('Authorization') || '';
-  if (!authorization.startsWith('Basic ')) return false;
-
-  try {
-    const decoded = atob(authorization.slice(6));
-    const separatorIndex = decoded.indexOf(':');
-    if (separatorIndex < 0) return false;
-    const suppliedUsername = decoded.slice(0, separatorIndex);
-    const suppliedPassword = decoded.slice(separatorIndex + 1);
-    const [usernameMatches, passwordMatches] = await Promise.all([
-      constantTimeEqual(suppliedUsername, username),
-      constantTimeEqual(suppliedPassword, password)
-    ]);
-    return usernameMatches && passwordMatches;
-  } catch {
-    return false;
-  }
-}
-
-function createHttpError(message, status = 400) {
-  const error = new Error(message);
-  error.status = status;
-  return error;
-}
-
-function safeId(value, fieldName) {
-  if (
-    typeof value !== 'string' ||
-    value.length < 1 ||
-    value.length > 256 ||
-    value.includes('/') ||
-    value.includes('\\') ||
-    !/^[\p{L}\p{N}_.+@:=\-]+$/u.test(value)
-  ) {
-    throw createHttpError(`${fieldName} 格式不正确。`, 400);
-  }
-  return value;
-}
-
-async function readJsonBody(request) {
-  const contentLength = Number(request.headers.get('Content-Length') || 0);
-  if (contentLength > JSON_BODY_LIMIT) throw createHttpError('请求内容过大。', 413);
-  const raw = await request.text();
-  if (new TextEncoder().encode(raw).byteLength > JSON_BODY_LIMIT) {
-    throw createHttpError('请求内容过大。', 413);
-  }
-  if (!raw) return {};
-  try {
-    const parsed = JSON.parse(raw);
-    if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') throw new Error('invalid');
-    return parsed;
-  } catch {
-    throw createHttpError('请求数据格式不正确。', 400);
-  }
-}
-
-function decodeHtmlEntities(value) {
-  const named = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
-  return value.replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (match, entity) => {
-    const lower = entity.toLowerCase();
-    if (lower.startsWith('#x')) {
-      const code = Number.parseInt(lower.slice(2), 16);
-      return Number.isFinite(code) ? String.fromCodePoint(code) : match;
-    }
-    if (lower.startsWith('#')) {
-      const code = Number.parseInt(lower.slice(1), 10);
-      return Number.isFinite(code) ? String.fromCodePoint(code) : match;
-    }
-    return named[lower] ?? match;
-  });
-}
-
-function htmlToPlainText(html) {
-  if (typeof html !== 'string' || !html) return '';
-  return decodeHtmlEntities(
-    html
-      .replace(/<!--[\s\S]*?-->/g, ' ')
-      .replace(/<(script|style|svg|math|iframe|object|embed|form)[^>]*>[\s\S]*?<\/\1\s*>/gi, ' ')
-      .replace(/<(br|hr)\s*\/?>/gi, '\n')
-      .replace(/<\/(p|div|li|tr|h[1-6])\s*>/gi, '\n')
-      .replace(/<[^>]+>/g, ' ')
-  )
-    .replace(/\r/g, '')
-    .replace(/[\t ]+/g, ' ')
-    .replace(/ *\n */g, '\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-}
-
-function getApiKey(env) {
-  return env.MOEMAIL_API_KEY?.trim() || env.AGENTMAIL_API_KEY?.trim() || '';
-}
-
-async function moeMailRequest(env, endpoint, options = {}) {
-  const apiKey = getApiKey(env);
-  if (!apiKey) {
-    throw createHttpError('尚未配置邮箱 API 密钥。请添加 MOEMAIL_API_KEY 或保留原来的 AGENTMAIL_API_KEY。', 503);
-  }
-
-  const baseUrl = (env.MOEMAIL_BASE_URL || DEFAULT_MOEMAIL_BASE_URL).replace(/\/$/, '');
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
-
-  try {
-    const response = await fetch(`${baseUrl}${endpoint}`, {
-      ...options,
-      headers: {
-        'X-API-Key': apiKey,
-        Accept: 'application/json',
-        ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-        ...(options.headers || {})
-      },
-      signal: controller.signal
-    });
-
-    const contentType = response.headers.get('Content-Type') || '';
-    const payload = contentType.includes('application/json')
-      ? await response.json().catch(() => ({}))
-      : { message: await response.text() };
-
-    if (!response.ok) {
-      const errorMessage =
-        payload?.message || payload?.error || payload?.detail || `MoeMail 接口返回 ${response.status}`;
-      const exposedStatus = response.status >= 400 && response.status < 500 ? response.status : 502;
-      throw createHttpError(String(errorMessage), exposedStatus);
-    }
-    return payload;
-  } catch (error) {
-    if (error?.name === 'AbortError') throw createHttpError('MoeMail 接口响应超时。', 504);
-    throw error;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-function pathParts(pathname) {
-  return pathname.split('/').filter(Boolean).map((part) => {
-    try { return decodeURIComponent(part); }
-    catch { throw createHttpError('URL 编码不正确。', 400); }
-  });
-}
-
-function normalizeInbox(item = {}) {
-  return {
-    inbox_id: String(item.id || item.inbox_id || ''),
-    email: String(item.address || item.email || ''),
-    display_name: 'MoeMail 邮箱',
-    created_at: item.createdAt || item.created_at || new Date().toISOString(),
-    expires_at: item.expiresAt || item.expires_at || null
-  };
-}
-
-function normalizeMessageSummary(item = {}) {
-  return {
-    message_id: String(item.id || item.message_id || ''),
-    from: String(item.from_address || item.fromAddress || item.from || ''),
-    subject: String(item.subject || ''),
-    preview: String(item.preview || item.content || '').slice(0, 240),
-    timestamp: item.received_at || item.receivedAt || item.timestamp || item.created_at || null
-  };
-}
-
-function normalizeMessageDetail(payload = {}) {
-  const message = payload.message || payload;
-  const textBody = message.content || message.text || htmlToPlainText(message.html || '');
-  const recipient = message.to_address || message.toAddress || message.to || '';
-  return {
-    message_id: String(message.id || message.message_id || ''),
-    from: String(message.from_address || message.fromAddress || message.from || ''),
-    to: Array.isArray(recipient) ? recipient.map(String) : (recipient ? [String(recipient)] : []),
-    subject: String(message.subject || ''),
-    text: String(textBody || '').slice(0, 500_000),
-    timestamp: message.received_at || message.receivedAt || message.timestamp || message.created_at || null,
-    attachments: Array.isArray(message.attachments) ? message.attachments : []
-  };
-}
-
-function randomMailboxName() {
-  const bytes = new Uint8Array(7);
-  crypto.getRandomValues(bytes);
-  const random = Array.from(bytes, (byte) => (byte % 36).toString(36)).join('');
-  return `m${Date.now().toString(36)}${random}`.slice(0, 32);
-}
-
-function parseDomains(config = {}) {
-  const raw = config.emailDomains || config.email_domains || config.domains || '';
-  const domains = Array.isArray(raw) ? raw : String(raw).split(',');
-  return domains.map((value) => String(value).trim()).filter(Boolean);
-}
-
-function parseExpiryTime(env) {
-  const allowed = new Set([0, 3600000, 86400000, 604800000]);
-  const value = Number(env.MOEMAIL_EXPIRY_TIME ?? 0);
-  return allowed.has(value) ? value : 0;
-}
-
-async function handleApi(request, env, url) {
-  const parts = pathParts(url.pathname);
-
-  if (request.method === 'GET' && url.pathname === '/api/health') {
-    if (!getApiKey(env)) {
-      return json({ ok: true, configured: false, provider: 'MoeMail' });
-    }
-    const config = await moeMailRequest(env, '/api/config');
-    return json({
-      ok: true,
-      configured: true,
-      provider: 'MoeMail',
-      domains: parseDomains(config),
-      runtime: 'Cloudflare Workers（云端运行环境）'
-    });
-  }
-
-  if (request.method === 'GET' && parts.length === 2 && parts[0] === 'api' && parts[1] === 'inboxes') {
-    const cursor = url.searchParams.get('page_token') || url.searchParams.get('cursor');
-    const endpoint = cursor ? `/api/emails?cursor=${encodeURIComponent(cursor.slice(0, 500))}` : '/api/emails';
-    const data = await moeMailRequest(env, endpoint);
-    const inboxes = (Array.isArray(data.emails) ? data.emails : []).map(normalizeInbox).filter((item) => item.inbox_id);
-    return json({
-      inboxes,
-      next_page_token: data.nextCursor || null,
-      total: Number(data.total ?? inboxes.length)
-    });
-  }
-
-  if (request.method === 'POST' && parts.length === 2 && parts[0] === 'api' && parts[1] === 'inboxes') {
-    await readJsonBody(request);
-    const config = await moeMailRequest(env, '/api/config');
-    const configuredDomains = parseDomains(config);
-    const preferredDomain = env.MOEMAIL_DOMAIN?.trim();
-    const domain = preferredDomain || configuredDomains[0];
-    if (!domain) throw createHttpError('MoeMail 系统没有配置可用邮箱域名。', 502);
-
-    let lastError;
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      try {
-        const data = await moeMailRequest(env, '/api/emails/generate', {
-          method: 'POST',
-          body: JSON.stringify({
-            name: randomMailboxName(),
-            expiryTime: parseExpiryTime(env),
-            domain
-          })
-        });
-        return json(normalizeInbox(data), 201);
-      } catch (error) {
-        lastError = error;
-        if (error.status !== 409) throw error;
-      }
-    }
-    throw lastError || createHttpError('创建随机邮箱失败。', 502);
-  }
-
-  if (
-    request.method === 'GET' && parts.length === 4 &&
-    parts[0] === 'api' && parts[1] === 'inboxes' && parts[3] === 'messages'
-  ) {
-    const inboxId = safeId(parts[2], '邮箱编号');
-    const cursor = url.searchParams.get('page_token') || url.searchParams.get('cursor');
-    const endpoint = cursor
-      ? `/api/emails/${encodeURIComponent(inboxId)}?cursor=${encodeURIComponent(cursor.slice(0, 500))}`
-      : `/api/emails/${encodeURIComponent(inboxId)}`;
-    const data = await moeMailRequest(env, endpoint);
-    let messages = (Array.isArray(data.messages) ? data.messages : [])
-      .map(normalizeMessageSummary)
-      .filter((item) => item.message_id);
-
-    const search = (url.searchParams.get('search') || url.searchParams.get('subject') || url.searchParams.get('from') || '')
-      .trim().toLowerCase().slice(0, 100);
-    if (search) {
-      messages = messages.filter((item) =>
-        item.subject.toLowerCase().includes(search) || item.from.toLowerCase().includes(search)
-      );
-    }
-    return json({ messages, next_page_token: data.nextCursor || null, total: Number(data.total ?? messages.length) });
-  }
-
-  if (
-    request.method === 'GET' && parts.length === 5 &&
-    parts[0] === 'api' && parts[1] === 'inboxes' && parts[3] === 'messages'
-  ) {
-    const inboxId = safeId(parts[2], '邮箱编号');
-    const messageId = safeId(parts[4], '邮件编号');
-    const data = await moeMailRequest(
-      env,
-      `/api/emails/${encodeURIComponent(inboxId)}/${encodeURIComponent(messageId)}`
-    );
-    return json(normalizeMessageDetail(data));
-  }
-
-  return json({ error: '接口不存在。' }, 404);
-}
-
-export default {
-  async fetch(request, env) {
-    try {
-      if (!(await isAuthorized(request, env))) return unauthorized();
-      const url = new URL(request.url);
-
-      if (url.pathname.startsWith('/api/')) return await handleApi(request, env, url);
-
-      if (url.pathname === '/style.css') {
-        return new Response(STYLE_CSS, {
-          headers: {
-            'Content-Type': 'text/css; charset=utf-8',
-            'Cache-Control': 'public, max-age=3600',
-            ...SECURITY_HEADERS
-          }
-        });
-      }
-
-      if (url.pathname === '/app.js') {
-        return new Response(APP_JS, {
-          headers: {
-            'Content-Type': 'text/javascript; charset=utf-8',
-            'Cache-Control': 'public, max-age=3600',
-            ...SECURITY_HEADERS
-          }
-        });
-      }
-
-      if (request.method !== 'GET' && request.method !== 'HEAD') {
-        return text('请求方式不支持。', 405, { Allow: 'GET, HEAD' });
-      }
-
-      return new Response(request.method === 'HEAD' ? null : INDEX_HTML, {
-        headers: {
-          'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'no-cache',
-          ...SECURITY_HEADERS
-        }
-      });
-    } catch (error) {
-      console.error('请求处理失败', error);
-      const status = Number.isInteger(error?.status) ? error.status : 500;
-      const message = status >= 500 && !error?.message ? '服务器发生错误。' : (error?.message || '服务器发生错误。');
-      return json({ error: message }, status);
-    }
-  }
-};
+function asset(content,type){return new Response(content,{headers:{'Content-Type':`${type}; charset=utf-8`,'Cache-Control':'public, max-age=3600',...SECURITY_HEADERS}});}
+export default { async fetch(request,env){try{const url=new URL(request.url);
+    if(url.pathname.startsWith('/api/admin/'))return await handleAdminApi(request,env,url);
+    if(url.pathname.startsWith('/api/public/'))return await handlePublicApi(request,env,url);
+    if(url.pathname==='/style.css')return asset(STYLE_CSS,'text/css');
+    if(url.pathname==='/admin.js')return asset(ADMIN_JS,'text/javascript');
+    if(url.pathname==='/viewer.js')return asset(VIEWER_JS,'text/javascript');
+    if(request.method!=='GET'&&request.method!=='HEAD')return text('请求方式不支持。',405,{Allow:'GET, HEAD'});
+    if(url.pathname==='/'||url.pathname==='/admin'){if(!(await isAuthorized(request,env)))return unauthorized();return html(request.method==='HEAD'?'':ADMIN_HTML);}
+    const parts=pathParts(url.pathname);if(parts.length===2&&parts[0]==='mail'){const id=safeId(parts[1],'邮箱编号');await validatePublicRequest(env,url,id);return html(request.method==='HEAD'?'':VIEWER_HTML);}
+    return text('页面不存在。',404);
+  }catch(error){console.error('请求处理失败',error);const status=Number.isInteger(error?.status)?error.status:500;return json({error:error?.message||'服务器发生错误。'},status);}}};
