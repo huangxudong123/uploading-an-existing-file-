@@ -30,7 +30,7 @@ npx wrangler deploy
 继续使用现有配置即可（密钥格式）：
 
 - `ADMIN_USERS` KV 绑定
-- `APP_USERNAME` 密码
-- `APP_PASSWORD` 账号
+- `APP_USERNAME` 账号
+- `APP_PASSWORD` 密码
 - `MOEMAIL_API_KEY` 邮件密钥
 - 建议配置 `PUBLIC_LINK_SECRET` 随意填写
